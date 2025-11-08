@@ -1,0 +1,139 @@
+Wie wird ein Destruktor genutzt, und wann wird dieser aufgerufen?
+Ein Destruktor wird dann aufgerufen wenn ein Objekt zerstört wird. 
+Z. B. am Ende der Laufzeit eines Programes.
+Destruktoren werden über ein Vorangesetztes Tilde "~" und über den Klassennamen gefolgt von einem Schwarzen Klammer Paar deklariert.
+
+Merksatz:
+std::vector<T> besitzt die enthaltenen Objekte → 
+automatischer Aufruf von Konstruktor bei push_back/emplace_back und Destruktor beim Verlassen des Scopes oder clear()
+
+Ownership und Vektor
+Frage 1: 1. Was passiert, wenn Sie monsters.clear() auf einen std::vector<Monster> aufrufen?
+Wird ein Vektor mit der Methode clear aufgerufen, dann wird der Inhalt von diesem Vektor freigegeben,
+bzw. alle Objekte innerhalb dieser liste werden gelöscht. Alle Destruktoren werden aufgerufen.
+Der Speicher des Vektors selber bleibt reserviert.
+
+Warum ist std::vector<Monster> sicherer als ein selbst implementiertes Array mit new Monster[size]?
+Durch das verwenden von std..vektor werden beim Löschen von Objekten automatisch Destruktoren aufgerufen.
+Beim Array ist das nicht der fall, es muss für jedes Objekt delete() Aufgerufen werden. Wird dass vergessen,
+dann entstehen Speicherlecks. std..vektor garantiert das Objekte zerstört werden.
+
+
+Merksatz: Referenzen sind sichere Aliase, Pointer sind flexible aber gefährliche Adressen.
+
+Fragen zu Referenzen, Pointer und Ownership
+
+1. Warum können Referenzen nicht in std::vector gespeichert werden?
+Referenzen müssen bei der deklaration initialisiert werden und können nicht neu zugewisen werden.
+In einem std:vektor müssen elemente jedoch kopiert, verschoben, oder neu zugewiesen werden.
+Z. B. wenn ein Pointer zu viele Objekte bekommt, wird der bisherige vektor in einen Doppelt so großen neuen Vektor kopiert.
+
+2. Wann sollten Sie Pointer anstelle von Referenzen verwenden?
+Pointer sollten dort verwendet werden wo Variablen nicht sofort initialisiert werden können.
+Des weiteren können auch nullptr dargestellt werden.
+( Das Objekt soll Optional sein, Der Pointer soll auf verschiedene Objekte umgebogen werden,
+wenn mit C-Conventions gearbeitet wird, (Schnittstelle zu anderen C-Programmen), 
+wenn Pointer Arithmetik benötigt wird (verschieben von Addressen).9
+
+ Was ist Legacy Code?
+
+Wichtig: Referenzen sind sicher und klar!!!
+
+3. Was ist das Hauptproblem bei der Verwendung von Raw-Pointern für Ownership?
+
+Das Hauptproblem ist die Manuelle Speicherplatz Verwaltung. Wenn murks passiert dann wirds schnell Gefährlich.
+
+
+Pointer sind sehr nützlich unter anderem für "Vorhanden Prüfungen" von Objekten
+
+Fragen zu den Unterabschnitten
+
+1. Warum schlägt dieser Code fehl: std::vector<Monster&> refs;?
+C++ erlaubt keine Referenzen auf containerklassen!!!
+
+2. Was ist der Hauptvorteil von const Monster& m gegenüber Monster m als Funktionsparameter?
+Der Hauptvorteil dieser Referenz ist, dass keine kopie des Objektes erstellt wird, 
+sondern lediglich der Verweis auf dieses genutzt wird.
+Dadurch kann auf dauer viel rechenleistung gespart werden.
+
+3. In welcher Situation würden Sie Monster* monster = nullptr; definitiv einem Smart Pointer vorziehen?
+Dann wenn ich mit C-APIs oder Legay-Apis Arbeiten müsste. Des weiteren kann das gut genutzt werden,
+um das Vorhandensein von Objekten zu Prüfen.
+
+Frage was hat das mit den Smart-Pointern aufsich, boot camp?
+
+Merksatz: Verwenden Sie std::make_unique<T>() statt new T, um exception-safe zu sein und Ownership klar zu definieren.
+
+Merksatz: shared_ptr ist teuer durch Referenzzählung – nur verwenden, wenn Ownership wirklich geteilt werden muss.
+
+1. Was passiert bei diesem Code und warum ist er problematisch?
+
+auto ptr = std::make_unique<Monster>();
+auto ptr2 = ptr;  // Fehler?
+
+Dieser Code ist deshalb felerhaft, da der unique pointer nicht erstellt werden kann,
+sondern nur verschoben werden kann. dies liegt daran, dass so nur exklusives Ownership möglich ist.
+Somit werden dangling pointer vermieden.
+
+2. Warum sollten Sie std::make_shared<Monster>() anstatt std::shared_ptr<Monster>(new Monster()) verwenden?
+new ist gefährlich! Da hierfür die manuelle Speicherverwaltung für das Monster benötigt wird.
+Ein Zerstören des Pointers sorgt nicht für ein Zerstören des Objekts!
+Dafür ist ein seperates zerstören notwendig!
+
+3. Wann würden Sie shared_ptr gegenüber unique_ptr wählen?
+Shared Pointer sind dort sinnvoll wo Ownerships bzw. Reffernzählungen genutzt werden!!!
+(Objekte werden in mehreren Containern gleicchzeitig gespeichert.)
+
+Faustregel: Beginnen Sie mit unique_ptr und wechseln nur zu shared_ptr, wenn Sie nachweislich geteiltes Ownership benötigen.
+
+Was ist vtable? Bitte einmal komplett erläutern?!
+
+Merksatz: Die vtable ist der Grund, warum virtuelle Funktionen einen kleinen Performance-Overhead haben, aber Polymorphie erst ermöglichen.
+
+Merksatz: Polymorphie ermöglicht es, Code zu schreiben, der mit verschiedenen Typen arbeitet, ohne Änderungen – ideal für Frameworks und Bibliotheken.
+
+
+1. Was passiert, wenn Sie virtual bei print() in der Basisklasse weglassen?
+Ohne virtual findet eine statische Bindung statt => Der Kompiler entscheidet zur Laufzeit welche Funktion Aufgerufen wird.
+In dem Beispielfall hätte das zur Folge, das nur 3 mal "Icch bin ein Fahrzeug geprintet wird."
+
+2. Warum ist virtual ~Fahrzeug() = default; in der Basisklasse zwingend notwendig?
+Ohne die Korekten Destruktoren werden die Objekte nicht richtig zerstört, daraus folgt das Speicherleaks auftreten,
+die abgeleiteten Klassenmember werden nicht richtig Freigegeben.
+
+3. Was bewirkt das override-Schlüsselwort und warum sollten Sie es immer verwenden?
+Das override Schlüsselwort dient dazu eine virtuelle Funktion  aus unserer Basisklasse
+zu überschreiben und stattdessen die aus unserer abgeleiteten Klasse zu verwenden.
+Des weiteren hilft diese syntax "sicher" zu Programieren, 
+tipp-fehler bzw wenn die Basisklasse niccht existiert fallen sofort auf, der Code wird Lesbarer.
+
+Die 10 wichtigsten Merksätze
+
+    Es gibt keinen virtuellen Konstruktor – Polymorphie funktioniert erst nach vollständiger Konstruktion des Objekts.
+    Immer virtuellen Destruktor in der Basisklasse, wenn Sie über Basis-Pointer/Referenzen löschen (virtual ~Base() = default;).
+    override ist Pflicht bei überschriebenen virtuellen Funktionen → Compiler warnt bei Tippfehlern.
+    final auf virtueller Methode verhindert weitere Überschreibung in abgeleiteten Klassen.
+    final auf Klasse verhindert Vererbung komplett (class Bike final : public Fahrzeug).
+    Smart Pointer besitzen, Rohpointer beobachten nur – T* = Beobachter, unique_ptr<T> / shared_ptr<T> = Owner.
+    Nie new/delete direkt verwenden in modernem C++ → make_unique / make_shared ist exception-safe.
+    std::vector<std::unique_ptr<Base>> ist der Standardweg für polymorphe Sammlungen mit exklusivem Ownership.
+    Referenzzähler von shared_ptr kostet Speicher und Zeit → nur verwenden, wenn wirklich geteilt werden muss.
+    weak_ptr löst Zyklen bei shared_ptr-Netzwerken (z. B. Parent → Child → Parent).
+
+1. Warum gibt es keinen virtuellen Konstruktor, obwohl virtuelle Destruktoren möglich sind?
+Das problem besteht darin, dass der vtable-Zeiger noch nicht existiert, dieser wird erst nach der Konstruktion anhelegt.
+Des weiteren ist der Typ unbekannt, der KOnstruktor muss wissen welcher konkrete Typ erstellt werden soll.
+Virtuellle Aufrufe benötigen ein existierendes Objekt mit vtable.
+
+2. Welcher Fehler tritt auf, wenn Sie std::vector<std::shared_ptr<Base>> mit new Base() befüllen statt make_shared?
+Memory Leaks könnten auftreten, seperate Allokationen
+
+3. Was passiert bei diesem shared_ptr-Zyklus und wie löst weak_ptr das Problem?
+
+struct Parent { std::shared_ptr<Child> child; };
+struct Child { std::shared_ptr<Parent> parent; };
+
+Überhaupt niccht verstanden.
+
+
+

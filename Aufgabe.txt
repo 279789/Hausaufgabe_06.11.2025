@@ -1,0 +1,1 @@
+Ein Motorrad in das Car Program einfügen. Mithilfe des Konzeptes von ownerships https://github.com/279789/vorlesung_ownership-polymorphie
